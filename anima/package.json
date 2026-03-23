@@ -1,0 +1,45 @@
+{
+  "name": "turtle-standalone",
+  "author": "crux161",
+  "version": "1.0.0",
+  "description": "Standalone Turtle watch party client",
+  "main": "dist/main.js",
+  "scripts": {
+    "build:web": "bun run --cwd ../games/Turtle/web build:all",
+    "build": "bun run build:web && tsc -p tsconfig.json && node ./scripts/copy-turtle-assets.mjs",
+    "build-app": "bun run build && ELECTRON_BUILDER_CACHE=.cache/electron-builder electron-builder --mac dir --publish never",
+    "server": "bun run build:web && bun run src/server.ts",
+    "build-electron": "bun run build && ELECTRON_BUILDER_CACHE=.cache/electron-builder electron-builder --mac --publish never"
+  },
+  "build": {
+    "appId": "com.turtle.proteus",
+    "productName": "Turtle",
+    "directories": {
+      "output": "../release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.entertainment",
+      "provisioningProfile": "../Turtle.provisionprofile"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  },
+  "dependencies": {
+    "cheerio": "^1.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.0",
+    "electron": "^41.0.3",
+    "electron-builder": "^26.8.1",
+    "typescript": "^5.9.2"
+  }
+}
