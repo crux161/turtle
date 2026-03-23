@@ -16,7 +16,7 @@ And while yes, I still want those people to grow... this is the bottle.
 
 ## Why "Turtle"?
 
-The name came out of a dumb little word-path that made me laugh:
+The name came out of a silly little play on words that made me laugh:
 
 `ani-cli -> ani-gui -> GUI -> 龜 gui ("turtle") -> Turtle`
 
@@ -129,7 +129,7 @@ bun run turtle:export-proteus
 
 That prepares a ready-to-copy Turtle export for host integration.
 
-## Architecture, In Normal Human Words
+## Architecture
 
 The stack looks like this:
 
@@ -178,4 +178,6 @@ This is still a bit of a mixed bag. Some of it is elegant. Some of it is cursed.
 
 But the heart is in the right place.
 
-If you made it this far, thank you for reading.
+If you made it this far, leave a star! ✨
+
+Thanks for reading.
