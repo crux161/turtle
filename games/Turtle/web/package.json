@@ -1,0 +1,23 @@
+{
+  "name": "turtle-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:standalone": "vite build --mode standalone",
+    "build:gamelette": "vite build --mode gamelette",
+    "build:all": "bun run build:standalone && bun run build:gamelette"
+  },
+  "dependencies": {
+    "hls.js": "^1.6.15",
+    "lucide-react": "^0.577.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.1"
+  }
+}

@@ -1,0 +1,70 @@
+[
+  {
+    "id": "cascade",
+    "name": "Cascade",
+    "icon": "🎮",
+    "type": "wasm",
+    "entry": "cascade.wasm",
+    "runtime": "go",
+    "version": "1.0.0",
+    "description": "Ebitengine puzzle game built with Go",
+    "color": "#2d7d46",
+    "url": "/games/Cascade/cascade.wasm"
+  },
+  {
+    "id": "mario64webgl",
+    "name": "Super Mario 64",
+    "icon": "🍄",
+    "type": "iframe",
+    "entry": "gamelet.html",
+    "version": "1.0.0",
+    "description": "Classic N64 platformer running via WebAssembly",
+    "color": "#0055bb",
+    "gamepadMapping": {
+      "buttons": {
+        "0": "k",
+        "1": "l",
+        "2": "j",
+        "3": "i",
+        "4": "q",
+        "5": "e",
+        "8": "Shift",
+        "9": "Enter",
+        "12": "ArrowUp",
+        "13": "ArrowDown",
+        "14": "ArrowLeft",
+        "15": "ArrowRight"
+      },
+      "axes": {
+        "0": [
+          "a",
+          "d"
+        ],
+        "1": [
+          "w",
+          "s"
+        ],
+        "2": [
+          "ArrowLeft",
+          "ArrowRight"
+        ],
+        "3": [
+          "ArrowUp",
+          "ArrowDown"
+        ]
+      }
+    },
+    "url": "/games/Mario64webgl/gamelet.html"
+  },
+  {
+    "id": "turtle",
+    "name": "Turtle",
+    "icon": "🐢",
+    "type": "iframe",
+    "entry": "dist/gamelette/index.html",
+    "version": "1.0.0",
+    "description": "Watch Party Engine",
+    "color": "#6b9362",
+    "url": "/games/Turtle/dist/gamelette/index.html"
+  }
+]

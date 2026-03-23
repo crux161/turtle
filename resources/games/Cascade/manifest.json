@@ -1,0 +1,11 @@
+{
+  "id": "cascade",
+  "name": "Cascade",
+  "icon": "🎮",
+  "type": "wasm",
+  "entry": "cascade.wasm",
+  "runtime": "go",
+  "version": "1.0.0",
+  "description": "Ebitengine puzzle game built with Go",
+  "color": "#2d7d46"
+}

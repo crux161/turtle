@@ -1,0 +1,1252 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    >
+    <title>Turtle</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap");
+
+      :root {
+        color-scheme: dark;
+        --bg-base: #000000;
+        --bg-panel: #050505;
+        --bg-highlight: #0a140a;
+        --term-green: #00ff41;
+        --term-dim: #008f11;
+        --term-dark: #003300;
+        --text-main: #00ff41;
+        --text-muted: #557755;
+        --text-alert: #ff003c;
+        --border-thin: 1px solid #1a331a;
+        --border-active: 1px solid var(--term-green);
+        --font-mono: "Share Tech Mono", "Courier New", Courier, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background-color: var(--bg-base);
+        color: var(--text-main);
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      body {
+        min-height: 100vh;
+        overflow: auto;
+      }
+
+      body::after {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-image: linear-gradient(rgba(0, 255, 65, 0.03) 1px, transparent 1px);
+        background-size: 100% 3px;
+        pointer-events: none;
+        z-index: 9999;
+      }
+
+      button,
+      input {
+        font: inherit;
+        text-transform: uppercase;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      button:disabled {
+        cursor: wait;
+        opacity: 0.7;
+      }
+
+      img {
+        display: block;
+        max-width: 100%;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      ::selection {
+        background: var(--term-green);
+        color: var(--bg-base);
+      }
+
+      ::-webkit-scrollbar {
+        width: 8px;
+        background: var(--bg-base);
+        border-left: var(--border-thin);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: var(--term-dim);
+      }
+
+      .app-shell {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        gap: 16px;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+
+      .app-header,
+      .panel {
+        background: var(--bg-panel);
+        border: var(--border-thin);
+        border-radius: 0;
+      }
+
+      .app-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 12px 20px;
+        border-bottom: 2px solid var(--term-dim);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .brand-icon {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        background: var(--term-dark);
+        border: var(--border-active);
+        font-size: 20px;
+        color: var(--term-green);
+      }
+
+      .brand-copy h1 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: normal;
+        letter-spacing: 2px;
+        color: var(--term-green);
+      }
+
+      .brand-copy p {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 12px;
+        border: var(--border-thin);
+        color: var(--term-green);
+        font-size: 13px;
+        background: var(--bg-highlight);
+      }
+
+      .status-badge::before {
+        content: "[WAIT]";
+        color: var(--text-muted);
+      }
+
+      .status-badge.ready::before {
+        content: "[OK]";
+        color: var(--term-green);
+      }
+
+      .status-badge.error {
+        border-color: var(--text-alert);
+        color: var(--text-alert);
+      }
+
+      .status-badge.error::before {
+        content: "[ERR]";
+        color: var(--text-alert);
+      }
+
+      .app-main {
+        display: grid;
+        gap: 16px;
+        min-height: 0;
+      }
+
+      .view {
+        min-height: 0;
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px;
+        border-bottom: var(--border-thin);
+        background: var(--bg-highlight);
+      }
+
+      .panel-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: normal;
+        letter-spacing: 1px;
+      }
+
+      .panel-subtitle {
+        margin: 4px 0 0;
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+
+      .panel-body {
+        padding: 20px;
+      }
+
+      .player-panel .panel-body {
+        display: grid;
+        gap: 16px;
+        padding: 16px;
+      }
+
+      .player-frame {
+        position: relative;
+        border: var(--border-active);
+        background: #000;
+      }
+
+      .player-frame::before,
+      .player-frame::after {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--term-green);
+        pointer-events: none;
+        z-index: 10;
+      }
+
+      .player-frame::before {
+        top: 0;
+        left: 0;
+        border-right: none;
+        border-bottom: none;
+      }
+
+      .player-frame::after {
+        right: 0;
+        bottom: 0;
+        border-top: none;
+        border-left: none;
+      }
+
+      #video-player {
+        width: 100%;
+        display: none;
+        background: #000;
+      }
+
+      .player-placeholder {
+        display: grid;
+        place-items: center;
+        min-height: 400px;
+        margin: 2px;
+        text-align: center;
+        border: 1px dashed var(--term-dim);
+      }
+
+      .player-placeholder h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: normal;
+      }
+
+      .player-placeholder p {
+        margin: 10px auto 0;
+        color: var(--text-muted);
+        font-size: 14px;
+      }
+
+      .pill,
+      .secondary-btn,
+      .primary-btn,
+      .episode-btn,
+      .result-card {
+        border-radius: 0;
+        transition: all 0.1s;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border: var(--border-thin);
+        color: var(--term-dim);
+        font-size: 12px;
+      }
+
+      .secondary-btn,
+      .primary-btn,
+      .episode-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 36px;
+        padding: 0 20px;
+        background: transparent;
+        border: var(--border-active);
+        color: var(--term-green);
+        font-weight: normal;
+      }
+
+      .secondary-btn:hover,
+      .primary-btn:hover,
+      .episode-btn:hover {
+        background: var(--term-green);
+        color: var(--bg-base);
+      }
+
+      .secondary-btn:active,
+      .primary-btn:active {
+        background: var(--term-dim);
+        border-color: var(--term-dim);
+      }
+
+      .secondary-btn:focus-visible,
+      .primary-btn:focus-visible,
+      .episode-btn:focus-visible,
+      .result-card:focus-visible,
+      .suggestion-item:focus-visible,
+      #search-input:focus-visible {
+        outline: 1px solid var(--term-green);
+        outline-offset: 2px;
+      }
+
+      .search-wrap {
+        display: grid;
+        gap: 24px;
+        justify-items: center;
+        min-height: 300px;
+        padding: 40px 20px;
+        text-align: center;
+      }
+
+      .search-wrap h2 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: normal;
+        letter-spacing: 2px;
+      }
+
+      .search-wrap p {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 14px;
+      }
+
+      .search-form {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0;
+        width: min(600px, 100%);
+      }
+
+      #search-input {
+        width: 100%;
+        min-height: 48px;
+        padding: 0 16px;
+        background: var(--bg-highlight);
+        border: var(--border-active);
+        border-right: none;
+        color: var(--term-green);
+        font-size: 18px;
+      }
+
+      #search-input::placeholder {
+        color: var(--term-dim);
+        opacity: 0.5;
+      }
+
+      #search-input:focus {
+        outline: none;
+        background: var(--term-dark);
+      }
+
+      #search-btn {
+        min-height: 48px;
+      }
+
+      .suggestions-dropdown {
+        grid-column: 1 / -1;
+        margin-top: -1px;
+        background: var(--bg-panel);
+        border: var(--border-active);
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 100;
+        text-align: left;
+      }
+
+      .suggestion-item {
+        display: flex;
+        flex-direction: column;
+        padding: 10px 16px;
+        cursor: pointer;
+        border-bottom: var(--border-thin);
+      }
+
+      .suggestion-item:last-child {
+        border-bottom: none;
+      }
+
+      .suggestion-item:hover,
+      .suggestion-item:focus-visible {
+        background: var(--term-green);
+        color: var(--bg-base);
+        outline: none;
+      }
+
+      .suggestion-item:hover .suggestion-primary,
+      .suggestion-item:hover .suggestion-secondary,
+      .suggestion-item:focus-visible .suggestion-primary,
+      .suggestion-item:focus-visible .suggestion-secondary {
+        color: var(--bg-base);
+      }
+
+      .suggestion-primary {
+        color: var(--term-green);
+        font-size: 14px;
+      }
+
+      .suggestion-secondary {
+        color: var(--term-dim);
+        font-size: 12px;
+        margin-top: 4px;
+      }
+
+      .results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 16px;
+      }
+
+      .result-card {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+        background: transparent;
+        border: var(--border-thin);
+        padding: 8px;
+        text-align: left;
+        color: var(--term-green);
+      }
+
+      .result-card:hover {
+        border-color: var(--term-green);
+        background: var(--bg-highlight);
+      }
+
+      .poster-frame {
+        aspect-ratio: 0.72;
+        overflow: hidden;
+        background: var(--term-dark);
+        border-bottom: var(--border-thin);
+        margin-bottom: 8px;
+        filter: grayscale(100%) contrast(1.2) sepia(100%) hue-rotate(80deg) saturate(300%)
+          brightness(0.8);
+        transition: filter 0.2s;
+      }
+
+      .result-card:hover .poster-frame {
+        filter: none;
+      }
+
+      .poster-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .result-title {
+        margin: 0;
+        font-size: 12px;
+        font-weight: normal;
+        line-height: 1.4;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .episodes-list {
+        display: grid;
+        gap: 4px;
+        max-height: 500px;
+        overflow: auto;
+        padding-right: 4px;
+      }
+
+      .episode-btn {
+        justify-content: space-between;
+        width: 100%;
+        padding: 0 16px;
+        border: var(--border-thin);
+      }
+
+      .episode-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .episode-num {
+        font-size: 14px;
+      }
+
+      .episode-copy {
+        color: var(--text-muted);
+        font-size: 11px;
+      }
+
+      .episode-btn:hover .episode-copy {
+        color: var(--bg-base);
+      }
+
+      .empty-state {
+        display: grid;
+        place-items: center;
+        min-height: 150px;
+        border: 1px dashed var(--term-dim);
+        color: var(--text-muted);
+        font-size: 14px;
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: var(--border-thin);
+      }
+
+      .toolbar-copy {
+        min-width: 0;
+      }
+
+      .toolbar-copy h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: normal;
+      }
+
+      .toolbar-copy p {
+        margin: 4px 0 0;
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+
+      .toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .loading-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 16px;
+        color: var(--term-green);
+        font-size: 14px;
+      }
+
+      .spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top-color: var(--term-green);
+        border-right-color: var(--term-green);
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+      }
+
+      .now-playing h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: normal;
+      }
+
+      .now-playing p {
+        margin: 4px 0 0;
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (max-width: 720px) {
+        .app-shell {
+          padding: 10px;
+        }
+
+        .app-header {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .search-form {
+          grid-template-columns: 1fr;
+        }
+
+        .toolbar {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .toolbar-actions {
+          width: 100%;
+          justify-content: space-between;
+        }
+
+        #search-input {
+          border-right: var(--border-active);
+          border-bottom: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="brand">
+          <div class="brand-icon" aria-hidden="true">🐢</div>
+          <div class="brand-copy">
+            <h1>Turtle</h1>
+            <p>Watch Party Engine</p>
+          </div>
+        </div>
+        <div class="status-badge" id="status-badge">Waiting for Proteus</div>
+      </header>
+
+      <main class="app-main">
+        <section class="panel player-panel" id="player-view" hidden>
+          <div class="panel-header">
+            <div class="toolbar-copy now-playing">
+              <h3 id="player-heading">Now Playing</h3>
+              <p id="player-copy">Your selected stream will play here.</p>
+            </div>
+            <div class="toolbar-actions">
+              <button class="secondary-btn" id="back-to-episodes-btn" type="button">Back</button>
+              <button class="secondary-btn" id="new-search-btn" type="button">New Search</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="player-frame">
+              <video id="video-player" controls style="width: 100%; display: none;"></video>
+              <div class="player-placeholder" id="player-placeholder">
+                <div>
+                  <h2>Turtle is ready to roll.</h2>
+                  <p>
+                    Streams arrive from the parent Electron app through <code>postMessage</code>.
+                    Once you pick an episode, the resolved HLS stream will appear here.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel view" id="search-view">
+          <div class="panel-body">
+            <div class="search-wrap">
+              <div>
+                <div class="pill">Search View</div>
+                <h2>Find a show and start the room.</h2>
+                <p>
+                  This iframe never scrapes directly. It only asks Proteus for search results,
+                  episodes, and final stream URLs.
+                </p>
+              </div>
+
+              <form class="search-form" id="search-form">
+                <input
+                  id="search-input"
+                  type="text"
+                  name="query"
+                  placeholder="Search anime titles"
+                  autocomplete="off"
+                >
+                <button class="primary-btn" id="search-btn" type="button">Search</button>
+                <div id="suggestions-container" class="suggestions-dropdown" hidden></div>
+              </form>
+
+              <div class="loading-row" id="loading-row" hidden>
+                <span class="spinner" aria-hidden="true"></span>
+                <span id="loading-text">Waiting for response…</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel view" id="results-view" hidden>
+          <div class="panel-body">
+            <div class="toolbar">
+              <div class="toolbar-copy">
+                <h2>Search Results</h2>
+                <p id="results-subtitle">Pick a show to request its episode list.</p>
+              </div>
+              <div class="toolbar-actions">
+                <div class="pill" id="results-count">0 shows</div>
+                <button class="secondary-btn" id="results-back-btn" type="button">Back</button>
+              </div>
+            </div>
+            <div class="results-grid" id="results-grid"></div>
+            <div class="empty-state" id="results-empty" hidden>
+              No search results have been loaded yet.
+            </div>
+          </div>
+        </section>
+
+        <section class="panel view" id="episodes-view" hidden>
+          <div class="panel-body">
+            <div class="toolbar">
+              <div class="toolbar-copy">
+                <h2>Episodes</h2>
+                <p id="episodes-subtitle">Choose an episode to request a stream.</p>
+              </div>
+              <div class="toolbar-actions">
+                <div class="pill" id="episodes-count">0 episodes</div>
+                <button class="secondary-btn" id="episodes-back-btn" type="button">Back</button>
+              </div>
+            </div>
+            <div class="episodes-list" id="episodes-list"></div>
+            <div class="empty-state" id="episodes-empty" hidden>
+              No episodes have been loaded yet.
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const views = {
+        search: document.getElementById("search-view"),
+        results: document.getElementById("results-view"),
+        episodes: document.getElementById("episodes-view"),
+        player: document.getElementById("player-view"),
+      };
+
+      const isStandalone = window === window.parent;
+      const standaloneParams = isStandalone ? new URLSearchParams(window.location.search) : null;
+      const standaloneApiPortRaw = standaloneParams?.get("api_port")?.trim() ?? "";
+      const standaloneApiPort = /^\d+$/.test(standaloneApiPortRaw) ? standaloneApiPortRaw : "";
+      const standaloneApiKey = standaloneParams?.get("api_key")?.trim() ?? "";
+      const standaloneApiHost = "127.0.0.1";
+      const standaloneReady = !isStandalone || Boolean(standaloneApiPort && standaloneApiKey);
+      const standaloneLaunchMessage =
+        "Standalone Turtle must be launched via the Turtle server script.";
+
+      if (isStandalone && standaloneReady) {
+        const cleanUrl = `${window.location.pathname}${window.location.hash}`;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+
+      const state = {
+        query: "",
+        results: [],
+        episodes: [],
+        latestSuggestionQuery: "",
+        selectedShow: null,
+        selectedEpisode: null,
+      };
+
+      const elements = {
+        statusBadge: document.getElementById("status-badge"),
+        searchForm: document.getElementById("search-form"),
+        searchInput: document.getElementById("search-input"),
+        searchBtn: document.getElementById("search-btn"),
+        suggestionsContainer: document.getElementById("suggestions-container"),
+        loadingRow: document.getElementById("loading-row"),
+        loadingText: document.getElementById("loading-text"),
+        resultsGrid: document.getElementById("results-grid"),
+        resultsEmpty: document.getElementById("results-empty"),
+        resultsSubtitle: document.getElementById("results-subtitle"),
+        resultsCount: document.getElementById("results-count"),
+        resultsBackBtn: document.getElementById("results-back-btn"),
+        episodesList: document.getElementById("episodes-list"),
+        episodesEmpty: document.getElementById("episodes-empty"),
+        episodesSubtitle: document.getElementById("episodes-subtitle"),
+        episodesCount: document.getElementById("episodes-count"),
+        episodesBackBtn: document.getElementById("episodes-back-btn"),
+        backToEpisodesBtn: document.getElementById("back-to-episodes-btn"),
+        newSearchBtn: document.getElementById("new-search-btn"),
+        playerHeading: document.getElementById("player-heading"),
+        playerCopy: document.getElementById("player-copy"),
+        playerPlaceholder: document.getElementById("player-placeholder"),
+        video: document.getElementById("video-player"),
+      };
+
+      let debounceTimer = null;
+      let hlsInstance = null;
+
+      function getStandaloneRequest(action, payload) {
+        const url = new URL(`http://${standaloneApiHost}:${standaloneApiPort}/api/${action}`);
+
+        if (action === "search" || action === "suggest") {
+          url.searchParams.set("q", String(payload ?? ""));
+        } else if (action === "episodes") {
+          url.searchParams.set("id", String(payload ?? ""));
+        } else if (action === "stream") {
+          url.searchParams.set("link", String(payload ?? ""));
+        } else {
+          throw new Error(`Unsupported Turtle action: ${action}`);
+        }
+
+        return url.toString();
+      }
+
+      function handleTurtleError(message) {
+        setLoading(false);
+        setStatus("Bridge error", "error");
+        alert("Error fetching data: " + message);
+      }
+
+      function handleTurtleResult(type, payload) {
+        if (type === "TURTLE_RESULT_SUGGEST") {
+          renderSuggestions(payload);
+          return;
+        }
+
+        if (type === "TURTLE_RESULT_SEARCH") {
+          setLoading(false);
+          setStatus("Search ready", "ready");
+          renderSearchResults(payload);
+          return;
+        }
+
+        if (type === "TURTLE_RESULT_EPISODES") {
+          setLoading(false);
+          setStatus("Episodes ready", "ready");
+          renderEpisodeList(payload);
+          return;
+        }
+
+        if (type === "TURTLE_RESULT_STREAM") {
+          setLoading(false);
+          setStatus("Stream ready", "ready");
+          playVideoStream(payload);
+        }
+      }
+
+      async function askProteus(action, payload) {
+        if (!isStandalone) {
+          window.parent.postMessage({ type: "TURTLE_CMD", action: action, payload: payload }, "*");
+          return;
+        }
+
+        if (!standaloneReady) {
+          setLoading(false);
+          setStatus("Launch via server", "error");
+          alert(standaloneLaunchMessage);
+          return;
+        }
+
+        try {
+          const response = await fetch(getStandaloneRequest(action, payload), {
+            headers: {
+              Authorization: standaloneApiKey,
+            },
+          });
+          const data = await response.json();
+
+          if (!response.ok) {
+            if (action === "suggest") {
+              renderSuggestions([]);
+              return;
+            }
+
+            handleTurtleError(data?.message ?? `Request failed with ${response.status}`);
+            return;
+          }
+
+          if (action === "suggest") {
+            handleTurtleResult("TURTLE_RESULT_SUGGEST", data);
+          } else if (action === "search") {
+            handleTurtleResult("TURTLE_RESULT_SEARCH", data);
+          } else if (action === "episodes") {
+            handleTurtleResult("TURTLE_RESULT_EPISODES", data);
+          } else if (action === "stream") {
+            handleTurtleResult("TURTLE_RESULT_STREAM", data);
+          }
+        } catch (caughtError) {
+          if (action === "suggest") {
+            renderSuggestions([]);
+            return;
+          }
+
+          handleTurtleError(
+            caughtError instanceof Error ? caughtError.message : "Unknown standalone error",
+          );
+        }
+      }
+
+      function setStatus(label, tone = "default") {
+        elements.statusBadge.textContent = label;
+        elements.statusBadge.className = `status-badge${tone !== "default" ? ` ${tone}` : ""}`;
+      }
+
+      function setLoading(loading, label = "Waiting for response…") {
+        elements.loadingRow.hidden = !loading;
+        elements.loadingText.textContent = label;
+        elements.searchBtn.disabled = loading;
+      }
+
+      function hideSuggestions() {
+        elements.suggestionsContainer.hidden = true;
+        elements.suggestionsContainer.innerHTML = "";
+      }
+
+      function showView(name) {
+        views.search.hidden = name !== "search";
+        views.results.hidden = name !== "results";
+        views.episodes.hidden = name !== "episodes";
+        views.player.hidden = name !== "player";
+      }
+
+      function destroyPlayer() {
+        if (hlsInstance) {
+          hlsInstance.destroy();
+          hlsInstance = null;
+        }
+
+        elements.video.pause();
+        elements.video.removeAttribute("src");
+        elements.video.style.display = "none";
+        elements.playerPlaceholder.hidden = false;
+      }
+
+      function resetToSearch() {
+        state.query = "";
+        state.results = [];
+        state.episodes = [];
+        state.selectedShow = null;
+        state.selectedEpisode = null;
+        state.latestSuggestionQuery = "";
+        elements.searchInput.value = "";
+        elements.resultsGrid.innerHTML = "";
+        elements.episodesList.innerHTML = "";
+        hideSuggestions();
+        destroyPlayer();
+        setLoading(false);
+        if (isStandalone && !standaloneReady) {
+          setStatus("Launch via server", "error");
+        } else {
+          setStatus(isStandalone ? "Standalone API mode" : "Waiting for Proteus", isStandalone ? "ready" : "default");
+        }
+        showView("search");
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function renderSearchResults(payload) {
+        hideSuggestions();
+        state.results = Array.isArray(payload) ? payload : [];
+        elements.resultsGrid.innerHTML = "";
+        elements.resultsCount.textContent = `${state.results.length} show${state.results.length === 1 ? "" : "s"}`;
+        elements.resultsSubtitle.textContent = state.query
+          ? `Results for “${state.query}”. Click a card to load episodes.`
+          : "Pick a show to request its episode list.";
+
+        if (!state.results.length) {
+          elements.resultsEmpty.hidden = false;
+          showView("results");
+          return;
+        }
+
+        elements.resultsEmpty.hidden = true;
+
+        state.results.forEach((item) => {
+          const card = document.createElement("button");
+          card.className = "result-card";
+          card.type = "button";
+          card.innerHTML = `
+            <div class="poster-frame">
+              ${
+                item.img
+                  ? `<img src="${escapeHtml(item.img)}" alt="${escapeHtml(item.title)} poster" loading="lazy">`
+                  : `<div style="width:100%;height:100%;display:grid;place-items:center;color:#b5bac1;background:#2b2d31;">No art</div>`
+              }
+            </div>
+            <p class="result-title">${escapeHtml(item.title)}</p>
+          `;
+          card.addEventListener("click", () => {
+            state.selectedShow = item;
+            setLoading(true, `Loading episodes for ${item.title}…`);
+            setStatus("Requesting episodes", "ready");
+            askProteus("episodes", item.id);
+          });
+          elements.resultsGrid.appendChild(card);
+        });
+
+        showView("results");
+      }
+
+      function renderEpisodeList(payload) {
+        hideSuggestions();
+        state.episodes = Array.isArray(payload) ? payload : [];
+        elements.episodesList.innerHTML = "";
+        elements.episodesCount.textContent = `${state.episodes.length} episode${state.episodes.length === 1 ? "" : "s"}`;
+        elements.episodesSubtitle.textContent = state.selectedShow
+          ? `${state.selectedShow.title} is ready. Choose an episode to request a stream.`
+          : "Choose an episode to request a stream.";
+
+        if (!state.episodes.length) {
+          elements.episodesEmpty.hidden = false;
+          showView("episodes");
+          return;
+        }
+
+        elements.episodesEmpty.hidden = true;
+
+        state.episodes.forEach((item) => {
+          const button = document.createElement("button");
+          button.className = "episode-btn";
+          button.type = "button";
+          button.innerHTML = `
+            <span class="episode-meta">
+              <span class="episode-num">Episode ${escapeHtml(String(item.epNum))}</span>
+              <span class="episode-copy">${state.selectedShow ? escapeHtml(state.selectedShow.title) : "Stream request"}</span>
+            </span>
+            <span>Play</span>
+          `;
+          button.addEventListener("click", () => {
+            state.selectedEpisode = item;
+            setLoading(true, `Resolving Episode ${item.epNum}…`);
+            setStatus("Requesting stream", "ready");
+            askProteus("stream", item.link);
+          });
+          elements.episodesList.appendChild(button);
+        });
+
+        showView("episodes");
+      }
+
+      function renderSuggestions(payload) {
+        const query = elements.searchInput.value.trim();
+        const suggestions = Array.isArray(payload) ? payload : [];
+
+        if (query.length < 2 || suggestions.length === 0) {
+          hideSuggestions();
+          return;
+        }
+
+        elements.suggestionsContainer.innerHTML = "";
+
+        suggestions.forEach((item) => {
+          if (!item || !item.romaji || !item.searchTitle) {
+            return;
+          }
+
+          const suggestion = document.createElement("div");
+          suggestion.className = "suggestion-item";
+          suggestion.tabIndex = 0;
+          suggestion.innerHTML = `
+            <span class="suggestion-primary">${escapeHtml(item.romaji)}</span>
+            ${
+              item.english && item.english !== item.romaji
+                ? `<span class="suggestion-secondary">${escapeHtml(item.english)}</span>`
+                : ""
+            }
+          `;
+
+          function commitSuggestion() {
+            elements.searchInput.value = item.searchTitle;
+            hideSuggestions();
+            elements.searchBtn.click();
+          }
+
+          suggestion.addEventListener("click", commitSuggestion);
+          suggestion.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              commitSuggestion();
+            }
+          });
+
+          elements.suggestionsContainer.appendChild(suggestion);
+        });
+
+        elements.suggestionsContainer.hidden =
+          elements.suggestionsContainer.children.length === 0;
+      }
+
+      function playVideoStream(streamUrl) {
+        const video = document.getElementById("video-player");
+
+        destroyPlayer();
+        elements.playerPlaceholder.hidden = true;
+        video.style.display = "block";
+        elements.playerHeading.textContent = state.selectedShow
+          ? state.selectedShow.title
+          : "Now Playing";
+        elements.playerCopy.textContent = state.selectedEpisode
+          ? `Episode ${state.selectedEpisode.epNum} is loading into the player.`
+          : "Your selected stream is loading.";
+
+        if (Hls.isSupported()) {
+          hlsInstance = new Hls();
+          hlsInstance.loadSource(streamUrl);
+          hlsInstance.attachMedia(video);
+          hlsInstance.on(Hls.Events.MANIFEST_PARSED, function () {
+            video.play().catch(() => {});
+          });
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          video.src = streamUrl;
+          video.addEventListener(
+            "loadedmetadata",
+            function onLoadedMetadata() {
+              video.removeEventListener("loadedmetadata", onLoadedMetadata);
+              video.play().catch(() => {});
+            },
+            { once: true },
+          );
+        } else {
+          video.src = streamUrl;
+          video.play().catch(() => {});
+        }
+
+        showView("player");
+      }
+
+      window.addEventListener("message", (event) => {
+        if (!event.data || typeof event.data !== "object") {
+          return;
+        }
+
+        const { type, payload } = event.data;
+
+        if (
+          type === "TURTLE_RESULT_SUGGEST" ||
+          type === "TURTLE_RESULT_SEARCH" ||
+          type === "TURTLE_RESULT_EPISODES" ||
+          type === "TURTLE_RESULT_STREAM"
+        ) {
+          handleTurtleResult(type, payload);
+        } else if (type === "TURTLE_ERROR") {
+          handleTurtleError(payload?.message ?? "Unknown error");
+        }
+      });
+
+      elements.searchForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        elements.searchBtn.click();
+      });
+
+      elements.searchInput.addEventListener("input", (event) => {
+        const query = event.target.value.trim();
+
+        state.latestSuggestionQuery = query;
+        clearTimeout(debounceTimer);
+
+        if (query.length < 2) {
+          hideSuggestions();
+          return;
+        }
+
+        debounceTimer = window.setTimeout(() => {
+          if (elements.searchInput.value.trim() !== query) {
+            return;
+          }
+
+          askProteus("suggest", query);
+        }, 300);
+      });
+
+      elements.searchBtn.addEventListener("click", () => {
+        const query = elements.searchInput.value.trim();
+        if (!query) {
+          elements.searchInput.focus();
+          return;
+        }
+
+        hideSuggestions();
+        state.query = query;
+        setLoading(true, `Searching for “${query}”…`);
+        setStatus("Searching", "ready");
+        askProteus("search", query);
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!(event.target instanceof Node)) {
+          return;
+        }
+
+        if (!elements.searchForm.contains(event.target)) {
+          hideSuggestions();
+        }
+      });
+
+      elements.resultsBackBtn.addEventListener("click", () => {
+        showView("search");
+      });
+
+      elements.episodesBackBtn.addEventListener("click", () => {
+        showView("results");
+      });
+
+      elements.backToEpisodesBtn.addEventListener("click", () => {
+        showView("episodes");
+      });
+
+      elements.newSearchBtn.addEventListener("click", () => {
+        resetToSearch();
+      });
+
+      elements.video.addEventListener("ended", () => {
+        showView("episodes");
+      });
+
+      if (isStandalone && !standaloneReady) {
+        setStatus("Launch via server", "error");
+        alert(standaloneLaunchMessage);
+      } else {
+        setStatus(isStandalone ? "Standalone API mode" : "Waiting for Proteus", isStandalone ? "ready" : "default");
+      }
+      showView("search");
+    </script>
+  </body>
+</html>

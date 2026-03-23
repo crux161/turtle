@@ -1,0 +1,106 @@
+/**
+ * @name Proteus Douyin
+ * @author Proteus
+ * @version 1.0.0
+ * @description Optional Proteus light and dark theme pack derived from the Douyin / TikTok UI kit references.
+ */
+
+.theme-dark {
+  --proteus-bg-0: #050505;
+  --proteus-bg-1: #0d0d10;
+  --proteus-bg-2: #121216;
+  --proteus-bg-3: #18181d;
+  --proteus-bg-4: #222229;
+
+  --proteus-text-0: #ffffff;
+  --proteus-text-1: #f3f3f4;
+  --proteus-text-2: #a6a6aa;
+  --proteus-text-3: #727277;
+
+  --proteus-accent: #fe2c55;
+  --proteus-accent-hover: #db012c;
+  --proteus-accent-active: #b40124;
+  --proteus-accent-subtle: #3b1722;
+
+  --proteus-link: #25f4ee;
+  --proteus-border: #27272c;
+  --proteus-border-subtle: #1c1c22;
+
+  --proteus-hover: rgba(255, 255, 255, 0.06);
+  --proteus-selected: rgba(254, 44, 85, 0.16);
+  --proteus-active: rgba(254, 44, 85, 0.24);
+
+  --proteus-status-positive: #0ac6c1;
+  --proteus-status-warning: #ffdb43;
+  --proteus-status-danger: #e6436d;
+  --proteus-status-offline: #7c7c85;
+
+  --proteus-scrollbar-thumb: rgba(255, 255, 255, 0.16);
+  --proteus-scrollbar-track: #0d0d10;
+  --proteus-selection: rgba(37, 244, 238, 0.18);
+  --proteus-mention: #341720;
+  --proteus-mention-bg: rgba(254, 44, 85, 0.18);
+
+  --proteus-ui-radius-card: 12px;
+  --proteus-ui-radius-control: 10px;
+  --proteus-ui-radius-pill: 9999px;
+  --proteus-ui-shadow-card: 0 12px 30px rgba(0, 0, 0, 0.48);
+  --proteus-ui-shadow-float: 0 28px 80px rgba(0, 0, 0, 0.62);
+  --proteus-ui-shell-gap: 14px;
+  --proteus-ui-panel-gap: 12px;
+  --proteus-ui-content-gap: 18px;
+  --proteus-ui-header-height: 64px;
+  --proteus-ui-sidebar-width: 280px;
+  --proteus-ui-right-rail-width: 264px;
+  --proteus-ui-density-scale: 0.92;
+}
+
+.theme-light {
+  --proteus-bg-0: #f1f1f1;
+  --proteus-bg-1: #f7f7f8;
+  --proteus-bg-2: #ffffff;
+  --proteus-bg-3: #fafafa;
+  --proteus-bg-4: #efeeee;
+
+  --proteus-text-0: #1c1c1c;
+  --proteus-text-1: #393939;
+  --proteus-text-2: #717171;
+  --proteus-text-3: #aaaaaa;
+
+  --proteus-accent: #fe2c55;
+  --proteus-accent-hover: #e50914;
+  --proteus-accent-active: #d00416;
+  --proteus-accent-subtle: #ffd5dd;
+
+  --proteus-link: #0ac6c1;
+  --proteus-border: #ececec;
+  --proteus-border-subtle: #dfdfe3;
+
+  --proteus-hover: rgba(28, 28, 28, 0.05);
+  --proteus-selected: rgba(254, 44, 85, 0.10);
+  --proteus-active: rgba(254, 44, 85, 0.16);
+
+  --proteus-status-positive: #0ac6c1;
+  --proteus-status-warning: #ffdb43;
+  --proteus-status-danger: #e6436d;
+  --proteus-status-offline: #8e8e8e;
+
+  --proteus-scrollbar-thumb: #c5c5c5;
+  --proteus-scrollbar-track: #f7f7f8;
+  --proteus-selection: rgba(37, 244, 238, 0.18);
+  --proteus-mention: #ffd5dd;
+  --proteus-mention-bg: rgba(254, 44, 85, 0.10);
+
+  --proteus-ui-radius-card: 12px;
+  --proteus-ui-radius-control: 10px;
+  --proteus-ui-radius-pill: 9999px;
+  --proteus-ui-shadow-card: 0 12px 28px rgba(28, 28, 28, 0.12);
+  --proteus-ui-shadow-float: 0 24px 64px rgba(28, 28, 28, 0.18);
+  --proteus-ui-shell-gap: 14px;
+  --proteus-ui-panel-gap: 12px;
+  --proteus-ui-content-gap: 18px;
+  --proteus-ui-header-height: 64px;
+  --proteus-ui-sidebar-width: 280px;
+  --proteus-ui-right-rail-width: 264px;
+  --proteus-ui-density-scale: 0.92;
+}

@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    >
+    <title>Mario 64 Gamelet</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #090b10;
+        --panel: rgba(10, 12, 18, 0.78);
+        --line: rgba(255, 255, 255, 0.14);
+        --text: #f4f7fb;
+        --muted: #b1bac5;
+        --danger: #f46b64;
+        --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+      }
+
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at top, rgba(69, 123, 255, 0.18), transparent 38%),
+          radial-gradient(circle at bottom, rgba(255, 158, 55, 0.14), transparent 30%),
+          var(--bg);
+        color: var(--text);
+        font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+      }
+
+      body {
+        position: relative;
+      }
+
+      #canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        outline: none;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+      }
+
+      .hud {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        z-index: 10;
+        pointer-events: none;
+      }
+
+      #status {
+        top: 16px;
+        display: inline-flex;
+        max-width: min(100%, 420px);
+        padding: 10px 14px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--panel);
+        backdrop-filter: blur(14px);
+        box-shadow: var(--shadow);
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      #status[hidden] {
+        display: none;
+      }
+
+      #hint {
+        bottom: 16px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 16px;
+        align-items: flex-end;
+        transition: opacity 0.2s;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--panel);
+        backdrop-filter: blur(14px);
+        box-shadow: var(--shadow);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-end;
+        max-width: min(100%, 520px);
+      }
+
+      .controls span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* Toggle button to show/hide controls overlay */
+      .controls-toggle {
+        position: absolute;
+        bottom: 16px;
+        left: 16px;
+        z-index: 10;
+        width: 34px;
+        height: 34px;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: var(--panel);
+        backdrop-filter: blur(14px);
+        box-shadow: var(--shadow);
+        color: var(--muted);
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: auto;
+        transition: opacity 0.2s, color 0.2s;
+      }
+      .controls-toggle:hover {
+        color: var(--text);
+      }
+      .controls-toggle.hidden-state {
+        opacity: 0.5;
+      }
+
+      #hint.collapsed .controls {
+        display: none;
+      }
+
+      .key {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 7px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: var(--text);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      #crash {
+        position: absolute;
+        inset: 0;
+        z-index: 20;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(8, 10, 14, 0.82);
+        backdrop-filter: blur(10px);
+      }
+
+      #crash.visible {
+        display: flex;
+      }
+
+      .crash-card {
+        width: min(680px, 100%);
+        padding: 24px;
+        border: 1px solid rgba(244, 107, 100, 0.26);
+        border-radius: 18px;
+        background: rgba(18, 22, 30, 0.92);
+        box-shadow: var(--shadow);
+      }
+
+      .crash-title {
+        margin: 0 0 10px;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--danger);
+      }
+
+      .crash-copy {
+        margin: 0 0 14px;
+        line-height: 1.5;
+        color: var(--text);
+      }
+
+      .crash-detail {
+        margin: 0;
+        padding: 12px 14px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      @media (max-width: 720px) {
+        #hint {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .controls {
+          justify-content: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas class="emscripten" id="canvas" tabindex="0"></canvas>
+
+    <div class="hud" id="status">Booting Super Mario 64…</div>
+
+    <div class="hud" id="hint">
+      <div class="controls pill" aria-label="Mario 64 controls">
+        <span><span class="key">WASD</span> Move</span>
+        <span><span class="key">L</span> A</span>
+        <span><span class="key">,</span> B</span>
+        <span><span class="key">K</span> Z</span>
+        <span><span class="key">Shift</span> R</span>
+        <span><span class="key">Space</span> Start</span>
+        <span><span class="key">Arrows</span> Camera</span>
+      </div>
+    </div>
+    <button class="controls-toggle" id="controls-toggle" title="Toggle controls overlay">⌨</button>
+
+    <div id="crash" aria-live="assertive">
+      <div class="crash-card">
+        <h1 class="crash-title">This gamelet crashed.</h1>
+        <p class="crash-copy">
+          The failure is contained inside the activity iframe, so the host app can stay alive.
+        </p>
+        <pre class="crash-detail" id="crash-detail"></pre>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const canvas = document.getElementById("canvas");
+        const statusEl = document.getElementById("status");
+        const crashEl = document.getElementById("crash");
+        const crashDetailEl = document.getElementById("crash-detail");
+        let hasCrashed = false;
+
+        function resolveLocal(path) {
+          return new URL(path, window.location.href).href;
+        }
+
+        function postHostMessage(type, payload) {
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage(
+                {
+                  source: "proteus-gamelet",
+                  gamelet: "mario64webgl",
+                  type: type,
+                  payload: payload || {},
+                },
+                "*"
+              );
+            }
+          } catch (err) {
+            console.warn("[Mario64webgl] postMessage failed:", err);
+          }
+        }
+
+        function setStatus(text) {
+          const next = (text || "").trim();
+          statusEl.textContent = next;
+          statusEl.hidden = next.length === 0;
+        }
+
+        function fitCanvas() {
+          if (!canvas) {
+            return;
+          }
+
+          const width = Math.max(1, window.innerWidth);
+          const height = Math.max(1, window.innerHeight);
+
+          if (typeof Module !== "undefined" && Module && typeof Module.setCanvasSize === "function") {
+            try {
+              Module.setCanvasSize(width, height);
+              return;
+            } catch (err) {
+              console.warn("[Mario64webgl] Module.setCanvasSize failed:", err);
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+        }
+
+        function showCrash(reason) {
+          if (hasCrashed) {
+            return;
+          }
+          hasCrashed = true;
+
+          const message =
+            reason instanceof Error
+              ? reason.stack || reason.message
+              : typeof reason === "string"
+                ? reason
+                : JSON.stringify(reason, null, 2);
+
+          crashDetailEl.textContent = message || "Unknown error";
+          crashEl.classList.add("visible");
+          setStatus("");
+          postHostMessage("crash", { message: message || "Unknown error" });
+        }
+
+        window.addEventListener("resize", fitCanvas);
+
+        window.addEventListener("error", function (event) {
+          showCrash(event.error || event.message || "Unhandled error");
+        });
+
+        window.addEventListener("unhandledrejection", function (event) {
+          showCrash(event.reason || "Unhandled promise rejection");
+        });
+
+        window.addEventListener("message", function (event) {
+          const data = event.data;
+          if (!data || data.source !== "proteus-host") {
+            return;
+          }
+
+          if (data.type === "pause" && typeof Module !== "undefined" && Module.pauseMainLoop) {
+            Module.pauseMainLoop();
+            postHostMessage("paused");
+          }
+
+          if (data.type === "resume" && typeof Module !== "undefined" && Module.resumeMainLoop) {
+            Module.resumeMainLoop();
+            canvas.focus();
+            postHostMessage("resumed");
+          }
+        });
+
+        // Controls overlay toggle — hides the keyboard hints HUD
+        var hintEl = document.getElementById("hint");
+        var toggleBtn = document.getElementById("controls-toggle");
+        toggleBtn.addEventListener("click", function () {
+          hintEl.classList.toggle("collapsed");
+          toggleBtn.classList.toggle("hidden-state");
+          // Refocus the canvas so keystrokes aren't lost
+          canvas.focus();
+        });
+
+        fitCanvas();
+        postHostMessage("booting");
+
+        window.Module = {
+          preRun: [],
+          postRun: [],
+          locateFile: function (path) {
+            return resolveLocal(path);
+          },
+          instantiateWasm: function (imports, successCallback) {
+            const wasmUrl = resolveLocal("sm64.us.f3dex2e.wasm");
+
+            fetch(wasmUrl)
+              .then(function (response) {
+                if (!response.ok) {
+                  throw new Error("Failed to fetch Mario64 WASM: " + response.status + " " + response.statusText);
+                }
+                return response.arrayBuffer();
+              })
+              .then(function (bytes) {
+                return WebAssembly.instantiate(bytes, imports);
+              })
+              .then(function (result) {
+                successCallback(result.instance, result.module);
+                postHostMessage("wasm-instantiated");
+              })
+              .catch(function (err) {
+                console.error("[Mario64webgl] instantiateWasm failed:", err);
+                showCrash(err);
+              });
+
+            return {};
+          },
+          print: function (text) {
+            if (arguments.length > 1) {
+              text = Array.prototype.slice.call(arguments).join(" ");
+            }
+            console.log("[Mario64webgl]", text);
+          },
+          printErr: function (text) {
+            if (arguments.length > 1) {
+              text = Array.prototype.slice.call(arguments).join(" ");
+            }
+            console.error("[Mario64webgl]", text);
+          },
+          canvas: (function () {
+            canvas.addEventListener(
+              "webglcontextlost",
+              function (event) {
+                event.preventDefault();
+                showCrash("WebGL context lost");
+              },
+              false
+            );
+            return canvas;
+          })(),
+          setStatus: function (text) {
+            setStatus(text);
+          },
+          onRuntimeInitialized: function () {
+            setStatus("");
+            fitCanvas();
+            canvas.focus();
+            postHostMessage("ready");
+            // Auto-hide controls after 5 seconds once the game is running
+            setTimeout(function () {
+              if (!hintEl.classList.contains("collapsed")) {
+                hintEl.classList.add("collapsed");
+                toggleBtn.classList.add("hidden-state");
+              }
+            }, 5000);
+          },
+          onAbort: function (reason) {
+            showCrash(reason || "Emscripten abort");
+          },
+          onExit: function (status) {
+            postHostMessage("exit", { status: status });
+          },
+          onFullscreen: function (isFullscreen) {
+            postHostMessage("fullscreen", { active: !!isFullscreen });
+          },
+        };
+      })();
+    </script>
+    <script async type="text/javascript" src="sm64.us.f3dex2e.js"></script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "id": "turtle",
+  "name": "Turtle",
+  "description": "Watch Party Engine",
+  "type": "iframe",
+  "entry": "dist/gamelette/index.html",
+  "url": "games/Turtle/dist/gamelette/index.html",
+  "icon": "🐢",
+  "version": "1.0.0",
+  "color": "#6b9362"
+}

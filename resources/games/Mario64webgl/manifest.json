@@ -1,0 +1,32 @@
+{
+  "id": "mario64webgl",
+  "name": "Super Mario 64",
+  "icon": "🍄",
+  "type": "iframe",
+  "entry": "gamelet.html",
+  "version": "1.0.0",
+  "description": "Classic N64 platformer running via WebAssembly",
+  "color": "#0055bb",
+  "gamepadMapping": {
+    "buttons": {
+      "0": "k",
+      "1": "l",
+      "2": "j",
+      "3": "i",
+      "4": "q",
+      "5": "e",
+      "8": "Shift",
+      "9": "Enter",
+      "12": "ArrowUp",
+      "13": "ArrowDown",
+      "14": "ArrowLeft",
+      "15": "ArrowRight"
+    },
+    "axes": {
+      "0": ["a", "d"],
+      "1": ["w", "s"],
+      "2": ["ArrowLeft", "ArrowRight"],
+      "3": ["ArrowUp", "ArrowDown"]
+    }
+  }
+}

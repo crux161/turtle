@@ -1,0 +1,19 @@
+{
+  "name": "fuchsia-workspace",
+  "private": true,
+  "scripts": {
+    "build-electron": "bun run turtle:package",
+    "turtle:app": "bun run --cwd ./ani-cli build-app",
+    "turtle:build": "bun run --cwd ./ani-cli build",
+    "turtle:export-proteus": "bun run --cwd ./ani-cli build && node ./games/Turtle/scripts/export-proteus.mjs",
+    "turtle:package": "bun run --cwd ./ani-cli build-electron",
+    "turtle:server": "bun run --cwd ./ani-cli server",
+    "turtle:web": "bun run --cwd ./games/Turtle/web build:all"
+  },
+  "dependencies": {
+    "lucide-react": "^0.577.0"
+  },
+  "devDependencies": {
+    "electron-builder": "^26.8.1"
+  }
+}
