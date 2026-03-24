@@ -1,6 +1,6 @@
 # Turtle
 
-![Turtle Splash](resources/splash/splash-tbg.png)
+![Turtle Splash](resources/turtle-preview.gif)
 
 Turtle is a love letter to anime, watch parties, and the idea that not everyone wants to live in a terminal to watch a show.
 
