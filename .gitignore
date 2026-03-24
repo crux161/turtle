@@ -18,6 +18,16 @@ node_modules/
 .bun-cache/
 **/.bun-cache/
 
+# Extra
+resources/Pixelify_Sans/
+resources/bg.png
+resources/splash/splash-nbg.png
+resources/splash/splash-tbg.png
+resources/splash/turtle.artstudio
+resources/splash/turtle.pdf
+resources/splash/turtle.psd
+
+
 # Build outputs and packaged artifacts
 dist/
 **/dist/

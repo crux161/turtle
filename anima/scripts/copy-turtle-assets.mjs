@@ -35,4 +35,25 @@ if (existsSync(themeSourceDir)) {
   });
 }
 
+const splashSource = resolve(projectDir, "..", "resources", "splash", "splash-v1.png");
+if (existsSync(splashSource)) {
+  await cp(splashSource, resolve(projectDir, "dist", "resources", "splash-v1.png"), {
+    force: true,
+  });
+}
+
+const iconSource = resolve(projectDir, "..", "resources", "icons", "turtle.icns");
+if (existsSync(iconSource)) {
+  await cp(iconSource, resolve(projectDir, "dist", "resources", "turtle.icns"), {
+    force: true,
+  });
+}
+
+const fontSource = resolve(projectDir, "..", "resources", "Pixelify_Sans", "PixelifySans-VariableFont_wght.ttf");
+if (existsSync(fontSource)) {
+  await cp(fontSource, resolve(projectDir, "dist", "resources", "PixelifySans.ttf"), {
+    force: true,
+  });
+}
+
 console.log(`Copied packaged Turtle assets to ${targetDir}`);

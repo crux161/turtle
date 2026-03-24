@@ -15,6 +15,7 @@ import {
   extractStreamSource,
   getEpisodes,
   getSuggestions,
+  listProviders,
   search,
 } from "./scraper.js";
 import { TurtleService } from "./turtle/service.js";
@@ -588,6 +589,17 @@ function startHttpServer(apiKey: string): Promise<{
           return;
         }
 
+        if (url.pathname === "/api/providers") {
+          const episodeLink = getRequiredParam(url, "link");
+          if (!episodeLink) {
+            writeError(response, "Missing required query parameter: link");
+            return;
+          }
+
+          writeJson(response, await listProviders(episodeLink));
+          return;
+        }
+
         if (url.pathname === "/api/stream") {
           const episodeLink = getRequiredParam(url, "link");
           if (!episodeLink) {
@@ -595,7 +607,8 @@ function startHttpServer(apiKey: string): Promise<{
             return;
           }
 
-          const streamSource = await extractStreamSource(episodeLink);
+          const preferredKind = url.searchParams.get("kind") || undefined;
+          const streamSource = await extractStreamSource(episodeLink, preferredKind);
           const address = server.address();
           const apiBaseUrl = getApiBaseUrl(
             address && typeof address !== "string" ? address.port : 0,

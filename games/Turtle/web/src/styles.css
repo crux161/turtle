@@ -231,11 +231,11 @@ img {
   position: relative;
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto 1fr auto;
   width: min(1380px, calc(100vw - 48px));
-  min-height: 860px;
+  height: min(960px, calc(100vh - 48px));
   border: 1px solid var(--frame-border);
-  border-radius: 28px;
+  border-radius: 20px;
   overflow: hidden;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--proteus-bg-2) 92%, transparent), color-mix(in srgb, var(--proteus-bg-0) 96%, transparent)),
@@ -251,7 +251,7 @@ img {
 }
 
 .turtle-shell--compact .turtle-workspace {
-  padding-bottom: 128px;
+  padding-bottom: 32px;
 }
 
 .turtle-shell::before {
@@ -344,7 +344,9 @@ img {
   display: flex;
   flex-direction: column;
   gap: 32px;
-  padding: 28px 22px 132px;
+  padding: 28px 22px 28px;
+  min-height: 0;
+  overflow-y: auto;
   background: linear-gradient(180deg, color-mix(in srgb, var(--proteus-bg-1) 94%, transparent), color-mix(in srgb, var(--proteus-bg-0) 96%, transparent));
   border-right: 1px solid color-mix(in srgb, var(--proteus-border-subtle) 90%, transparent);
 }
@@ -477,8 +479,9 @@ img {
 .turtle-workspace {
   position: relative;
   z-index: 1;
-  padding: 40px 46px 150px;
-  overflow: auto;
+  padding: 40px 46px 40px;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .workspace-header {
@@ -669,6 +672,10 @@ img {
   border-radius: 26px;
   background: rgba(255, 255, 255, 0.05);
   box-shadow: var(--shadow-soft);
+}
+
+.panel-block {
+  padding: 18px;
 }
 
 .content-grid {
@@ -1015,16 +1022,14 @@ img {
 }
 
 .player-dock {
-  position: absolute;
-  right: 24px;
-  bottom: 22px;
-  left: 24px;
+  grid-column: 1 / -1;
   z-index: 3;
   display: grid;
   grid-template-columns: minmax(240px, 0.8fr) minmax(320px, 1.4fr) minmax(180px, 0.7fr);
   gap: 20px;
   align-items: center;
   padding: 18px 24px;
+  border-radius: 0 0 20px 20px;
   background:
     linear-gradient(180deg, rgba(22, 23, 42, 0.96), rgba(18, 18, 34, 0.98)),
     rgba(16, 16, 31, 0.96);
@@ -1334,6 +1339,36 @@ img {
   letter-spacing: 0.02em;
 }
 
+.provider-select {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--proteus-bg-2) 78%, transparent);
+  color: var(--text-primary);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--proteus-border) 76%, transparent);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 22px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+.provider-select:hover {
+  background-color: color-mix(in srgb, var(--proteus-hover) 86%, var(--proteus-bg-2));
+}
+
+.provider-select option {
+  background: var(--proteus-bg-1);
+  color: var(--text-primary);
+}
+
 .quality-badge--ghost {
   min-width: 54px;
   background: color-mix(in srgb, var(--proteus-bg-2) 78%, transparent);
@@ -1417,11 +1452,6 @@ img {
   max-width: 140px;
 }
 
-.turtle-scene--desktop .player-dock {
-  left: 18px;
-  right: 18px;
-  bottom: 18px;
-}
 
 .turtle-scene--desktop {
   padding: 0;
@@ -1437,7 +1467,7 @@ img {
 
 .turtle-scene--desktop .turtle-shell {
   width: 100vw;
-  min-height: 100vh;
+  height: 100vh;
   border: 0;
   border-radius: 0;
 }
@@ -1488,6 +1518,86 @@ img {
   bottom: 24px;
 }
 
+.turtle-shell--native-fullscreen {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+.turtle-shell--native-fullscreen .turtle-titlebar,
+.turtle-shell--native-fullscreen .turtle-sidebar,
+.turtle-shell--native-fullscreen .player-dock {
+  display: none;
+}
+
+.turtle-shell--native-fullscreen .turtle-workspace {
+  padding: 0;
+  overflow: hidden;
+}
+
+.turtle-shell--native-fullscreen .workspace-header,
+.turtle-shell--native-fullscreen .error-banner,
+.turtle-shell--native-fullscreen .panel-block,
+.turtle-shell--native-fullscreen .settings-grid,
+.turtle-shell--native-fullscreen .show-workspace .viewer-grid > .episode-panel,
+.turtle-shell--native-fullscreen .show-workspace .viewer-stage__meta {
+  display: none;
+}
+
+.turtle-shell--native-fullscreen .show-workspace {
+  margin-top: 0;
+}
+
+.turtle-shell--native-fullscreen .show-workspace--hidden {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+}
+
+.turtle-shell--native-fullscreen .viewer-grid {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.turtle-shell--native-fullscreen .viewer-stage {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #000;
+  box-shadow: none;
+}
+
+.turtle-shell--native-fullscreen .viewer-stage__media {
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  border-radius: 0;
+  background: #000;
+}
+
+.turtle-shell--native-fullscreen .viewer-stage__media video {
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  object-fit: contain;
+  background: #000;
+}
+
+.turtle-shell--native-fullscreen .viewer-stage__placeholder {
+  display: none;
+}
+
+.turtle-shell--native-fullscreen .viewer-stage__hud {
+  top: 24px;
+  right: 24px;
+}
+
+.turtle-shell--native-fullscreen .floating-player-controls {
+  left: 24px;
+  right: 24px;
+  bottom: 24px;
+}
+
 .progress-slider input,
 .player-dock__volume input,
 .floating-player-controls__volume input,
@@ -1512,15 +1622,6 @@ img {
   .player-dock,
   .floating-player-controls {
     grid-template-columns: 1fr;
-  }
-
-  .player-dock {
-    position: static;
-    margin-top: 28px;
-  }
-
-  .turtle-workspace {
-    padding-bottom: 46px;
   }
 }
 

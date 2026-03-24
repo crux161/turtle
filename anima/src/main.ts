@@ -1,12 +1,13 @@
-import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, nativeImage, shell } from "electron";
 import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 
 import { getSuggestions } from "./scraper.js";
 import { startStandaloneServer, type StandaloneServerSession } from "./server.js";
 
 let mainWindow: BrowserWindow | null = null;
+let splashWindow: BrowserWindow | null = null;
 let serverSession: StandaloneServerSession | null = null;
 
 app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
@@ -15,6 +16,7 @@ function serializeWindowState(window: BrowserWindow | null) {
   return {
     isDesktop: Boolean(window),
     isMaximized: window?.isMaximized() ?? false,
+    isFullScreen: window?.isFullScreen() ?? false,
   };
 }
 
@@ -98,6 +100,19 @@ ipcMain.handle("window:close", async () => {
   mainWindow?.close();
 });
 
+ipcMain.handle("window:setFullScreen", async (_event, flag: boolean) => {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return false;
+  }
+
+  mainWindow.setFullScreen(Boolean(flag));
+  return mainWindow.isFullScreen();
+});
+
+ipcMain.handle("window:isFullScreen", async () => {
+  return mainWindow?.isFullScreen() ?? false;
+});
+
 async function ensureServerSession(): Promise<StandaloneServerSession> {
   if (!serverSession) {
     serverSession = await startStandaloneServer();
@@ -106,8 +121,81 @@ async function ensureServerSession(): Promise<StandaloneServerSession> {
   return serverSession;
 }
 
+function resolveResourcePath(...segments: string[]): string {
+  // In packaged builds, resources land in process.resourcesPath
+  // In dev, they're in dist/resources
+  const packaged = resolve(process.resourcesPath, ...segments);
+  if (existsSync(packaged)) {
+    return packaged;
+  }
+
+  return resolve(__dirname, "resources", ...segments);
+}
+
+function resolveAppIcon(): string | undefined {
+  const icns = resolveResourcePath("turtle.icns");
+  if (existsSync(icns)) {
+    return icns;
+  }
+
+  return undefined;
+}
+
+async function showSplashScreen(): Promise<BrowserWindow> {
+  const splashPath = resolveResourcePath("splash-v1.png");
+  const iconPath = resolveAppIcon();
+
+  const splash = new BrowserWindow({
+    width: 828,
+    height: 600,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    center: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    show: false,
+    ...(iconPath ? { icon: nativeImage.createFromPath(iconPath) } : {}),
+    webPreferences: {
+      contextIsolation: true,
+      sandbox: true,
+      nodeIntegration: false,
+    },
+  });
+
+  const toFileUrl = (p: string) => `file://${p.replace(/\\/g, "/")}`;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; -webkit-app-region: drag; }
+  .splash { width: 100%; height: 100%; }
+  .splash img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+</style>
+</head>
+<body>
+  <div class="splash">
+    <img src="${toFileUrl(splashPath)}" alt="Turtle" />
+  </div>
+</body>
+</html>`;
+
+  const splashHtmlPath = resolve(app.getPath("temp"), "turtle-splash.html");
+  await writeFile(splashHtmlPath, html, "utf8");
+  await splash.loadFile(splashHtmlPath);
+  splash.once("ready-to-show", () => splash.show());
+  splash.show();
+  splashWindow = splash;
+
+  return splash;
+}
+
 async function createMainWindow(): Promise<void> {
   const session = await ensureServerSession();
+  const iconPath = resolveAppIcon();
 
   const window = new BrowserWindow({
     width: 1440,
@@ -117,9 +205,9 @@ async function createMainWindow(): Promise<void> {
     backgroundColor: "#101115",
     autoHideMenuBar: true,
     frame: false,
-    titleBarStyle: "hidden",
     show: false,
     title: "Turtle",
+    ...(iconPath ? { icon: nativeImage.createFromPath(iconPath) } : {}),
     webPreferences: {
       contextIsolation: true,
       sandbox: true,
@@ -133,6 +221,11 @@ async function createMainWindow(): Promise<void> {
   window.once("ready-to-show", () => {
     window.show();
     broadcastWindowState();
+
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.close();
+      splashWindow = null;
+    }
   });
 
   window.on("closed", () => {
@@ -152,6 +245,15 @@ async function createMainWindow(): Promise<void> {
 app
   .whenReady()
   .then(async () => {
+    await showSplashScreen();
+
+    // Begin server init in parallel with the splash display
+    const serverReady = ensureServerSession();
+
+    // Ensure at least 3 seconds of splash visibility
+    const splashMinDelay = new Promise<void>((resolve) => setTimeout(resolve, 3000));
+
+    await Promise.all([serverReady, splashMinDelay]);
     await createMainWindow();
 
     app.on("activate", async () => {

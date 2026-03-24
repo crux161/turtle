@@ -95,6 +95,12 @@ export interface UpdateCheckResult {
 export interface DesktopWindowState {
   isDesktop: boolean;
   isMaximized: boolean;
+  isFullScreen: boolean;
+}
+
+export interface ProviderOption {
+  kind: string;
+  label: string;
 }
 
 export interface TurtleRuntimeAdapter {
@@ -103,7 +109,8 @@ export interface TurtleRuntimeAdapter {
   suggest(query: string): Promise<Suggestion[]>;
   getShow(showId: string): Promise<ShowSummary | null>;
   getEpisodes(sourceId: string): Promise<EpisodeEntry[]>;
-  getStream(episodeLink: string): Promise<string>;
+  getStream(episodeLink: string, preferredKind?: string): Promise<string>;
+  getProviders(episodeLink: string): Promise<ProviderOption[]>;
   getFeatured(): Promise<FeaturedPayload>;
   listFavorites(): Promise<ShowSummary[]>;
   setFavorite(show: ShowSummary, isFavorite: boolean): Promise<ShowSummary[]>;

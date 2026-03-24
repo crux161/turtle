@@ -7,12 +7,14 @@ declare global {
         suggest?: (query: string) => Promise<unknown>;
       };
       window?: {
-        getState?: () => Promise<{ isDesktop: boolean; isMaximized: boolean }>;
-        minimize?: () => Promise<{ isDesktop: boolean; isMaximized: boolean }>;
-        toggleMaximize?: () => Promise<{ isDesktop: boolean; isMaximized: boolean }>;
+        getState?: () => Promise<{ isDesktop: boolean; isMaximized: boolean; isFullScreen: boolean }>;
+        minimize?: () => Promise<{ isDesktop: boolean; isMaximized: boolean; isFullScreen: boolean }>;
+        toggleMaximize?: () => Promise<{ isDesktop: boolean; isMaximized: boolean; isFullScreen: boolean }>;
         close?: () => Promise<void>;
+        setFullScreen?: (flag: boolean) => Promise<boolean>;
+        isFullScreen?: () => Promise<boolean>;
         onStateChanged?: (
-          listener: (state: { isDesktop: boolean; isMaximized: boolean }) => void,
+          listener: (state: { isDesktop: boolean; isMaximized: boolean; isFullScreen: boolean }) => void,
         ) => (() => void);
       };
     };

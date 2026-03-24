@@ -23,15 +23,28 @@
     ],
     "mac": {
       "target": "dmg",
+      "icon": "../resources/icons/turtle.icns",
       "category": "public.app-category.entertainment",
       "provisioningProfile": "../Turtle.provisionprofile"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "../resources/icons/turtle_256x256x32.png"
     },
     "linux": {
-      "target": "AppImage"
-    }
+      "target": "AppImage",
+      "icon": "../resources/icons/turtle_256x256x32.png"
+    },
+    "extraResources": [
+      {
+        "from": "../resources/splash/splash-v1.png",
+        "to": "splash-v1.png"
+      },
+      {
+        "from": "../resources/Pixelify_Sans/PixelifySans-VariableFont_wght.ttf",
+        "to": "PixelifySans.ttf"
+      }
+    ]
   },
   "dependencies": {
     "cheerio": "^1.1.2"

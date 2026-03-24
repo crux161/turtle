@@ -19,10 +19,16 @@ contextBridge.exposeInMainWorld("api", {
     close() {
       return ipcRenderer.invoke("window:close");
     },
-    onStateChanged(listener: (state: { isDesktop: boolean; isMaximized: boolean }) => void) {
+    setFullScreen(flag: boolean) {
+      return ipcRenderer.invoke("window:setFullScreen", flag);
+    },
+    isFullScreen() {
+      return ipcRenderer.invoke("window:isFullScreen");
+    },
+    onStateChanged(listener: (state: { isDesktop: boolean; isMaximized: boolean; isFullScreen: boolean }) => void) {
       const wrapped = (
         _event: Electron.IpcRendererEvent,
-        state: { isDesktop: boolean; isMaximized: boolean },
+        state: { isDesktop: boolean; isMaximized: boolean; isFullScreen: boolean },
       ) => {
         listener(state);
       };

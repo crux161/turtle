@@ -7,6 +7,7 @@ import {
   Home,
   LoaderCircle,
   Maximize2,
+  Minimize2,
   Minus,
   Moon,
   Palette,
@@ -43,6 +44,7 @@ import {
   type EpisodeEntry,
   type FeaturedPayload,
   type HistoryEntry,
+  type ProviderOption,
   type ShowSummary,
   type TurtleRuntimeAdapter,
   type TurtleSettings,
@@ -145,6 +147,7 @@ export function TurtleApp() {
   const hlsRef = useRef<Hls | null>(null);
   const playbackSaveTimerRef = useRef<number | null>(null);
   const fullscreenControlsTimerRef = useRef<number | null>(null);
+  const suppressSuggestionsRef = useRef(false);
 
   const [{ page, showId }, setLocationState] = useState(() => parseLocation());
   const [bootstrapReady, setBootstrapReady] = useState(false);
@@ -176,10 +179,13 @@ export function TurtleApp() {
   const [windowState, setWindowState] = useState<DesktopWindowState>({
     isDesktop: false,
     isMaximized: false,
+    isFullScreen: false,
   });
   const [isPlayerFullscreen, setIsPlayerFullscreen] = useState(false);
   const [showFullscreenControls, setShowFullscreenControls] = useState(true);
   const [qualityLabel, setQualityLabel] = useState("Auto");
+  const [providers, setProviders] = useState<ProviderOption[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState("");
 
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const progressPercent = durationSeconds > 0 ? (playbackSeconds / durationSeconds) * 100 : 0;
@@ -263,6 +269,11 @@ export function TurtleApp() {
     const trimmed = deferredSearchQuery.trim();
     if (trimmed.length < 2) {
       setSuggestions([]);
+      return;
+    }
+
+    if (suppressSuggestionsRef.current) {
+      suppressSuggestionsRef.current = false;
       return;
     }
 
@@ -466,6 +477,36 @@ export function TurtleApp() {
   }, []);
 
   useEffect(() => {
+    if (windowState.isFullScreen && !isPlayerFullscreen) {
+      setIsPlayerFullscreen(true);
+      setShowFullscreenControls(true);
+    } else if (!windowState.isFullScreen && isPlayerFullscreen && window.api?.window?.setFullScreen) {
+      setIsPlayerFullscreen(false);
+      setShowFullscreenControls(true);
+      if (fullscreenControlsTimerRef.current) {
+        window.clearTimeout(fullscreenControlsTimerRef.current);
+        fullscreenControlsTimerRef.current = null;
+      }
+    }
+  }, [windowState.isFullScreen]);
+
+  useEffect(() => {
+    if (!isPlayerFullscreen || !window.api?.window?.setFullScreen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        void window.api?.window?.setFullScreen?.(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isPlayerFullscreen]);
+
+  useEffect(() => {
     if (!isPlayerFullscreen) {
       setShowFullscreenControls(true);
       if (fullscreenControlsTimerRef.current) {
@@ -515,6 +556,8 @@ export function TurtleApp() {
     setPlaybackSeconds(0);
     setDurationSeconds(0);
     setQualityLabel("Auto");
+    setProviders([]);
+    setSelectedProvider("");
   }
 
   function revealFullscreenControls() {
@@ -579,12 +622,21 @@ export function TurtleApp() {
   }
 
   async function togglePlayerFullscreen() {
+    revealFullscreenControls();
+
+    const windowBridge = window.api?.window;
+    if (windowBridge?.setFullScreen) {
+      const nextFlag = !isPlayerFullscreen;
+      await windowBridge.setFullScreen(nextFlag);
+      setIsPlayerFullscreen(nextFlag);
+      setShowFullscreenControls(true);
+      return;
+    }
+
     const surface = viewerSurfaceRef.current;
     if (!surface) {
       return;
     }
-
-    revealFullscreenControls();
 
     if (document.fullscreenElement === surface) {
       await document.exitFullscreen();
@@ -782,13 +834,85 @@ export function TurtleApp() {
     syncHistoryState(nextHistory);
   }
 
-  async function playEpisode(episode: EpisodeEntry) {
+  async function handleProviderChange(kind: string) {
+    setSelectedProvider(kind);
+    if (!selectedEpisode) return;
+
+    setBusyAction("Switching provider");
+    setStatusLabel("Switching provider");
+
+    try {
+      const streamUrl = await runtime.getStream(selectedEpisode.link, kind || undefined);
+      const video = videoRef.current;
+      if (!video) {
+        throw new Error("Video element is unavailable.");
+      }
+
+      const currentTime = video.currentTime;
+      const canUseHls = isHlsStream(streamUrl) && Hls.isSupported();
+
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+
+      setCurrentStreamUrl(streamUrl);
+
+      const applyResumePoint = () => {
+        if (currentTime > 0 && Math.abs(video.currentTime - currentTime) > 1) {
+          video.currentTime = currentTime;
+        }
+        video.removeEventListener("loadedmetadata", applyResumePoint);
+      };
+      video.addEventListener("loadedmetadata", applyResumePoint);
+
+      if (canUseHls) {
+        const hls = new Hls();
+        hlsRef.current = hls;
+        hls.loadSource(streamUrl);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.LEVEL_SWITCHED, (_event, data) => {
+          const level = hls.levels[data.level];
+          setQualityLabel(formatQualityLabel(level?.height || video.videoHeight));
+        });
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          const currentLevel = hls.currentLevel >= 0 ? hls.currentLevel : hls.firstLevel;
+          const level = currentLevel >= 0 ? hls.levels[currentLevel] : hls.levels[0];
+          setQualityLabel(formatQualityLabel(level?.height || video.videoHeight));
+          void video.play();
+        });
+      } else {
+        video.src = streamUrl;
+        setQualityLabel(formatQualityLabel(video.videoHeight || 0));
+        await video.play();
+      }
+
+      setBusyAction("");
+      setStatusLabel(`Playing episode ${selectedEpisode.epNum}`);
+    } catch (error) {
+      setBusyAction("");
+      setErrorMessage(error instanceof Error ? error.message : "Unable to switch provider.");
+      setStatusLabel("Provider switch failed");
+    }
+  }
+
+  async function playEpisode(episode: EpisodeEntry, providerKind?: string) {
     setBusyAction(`Resolving episode ${episode.epNum}`);
     setStatusLabel(`Resolving episode ${episode.epNum}`);
     setErrorMessage("");
 
     try {
-      const streamUrl = await runtime.getStream(episode.link);
+      const kindToUse = providerKind ?? (selectedProvider || undefined);
+      const streamUrl = await runtime.getStream(episode.link, kindToUse);
+
+      void runtime.getProviders(episode.link)
+        .then((result) => {
+          setProviders(result);
+          if (!kindToUse && result.length > 0) {
+            setSelectedProvider(result[0].kind);
+          }
+        })
+        .catch(() => setProviders([]));
       const video = videoRef.current;
       if (!video) {
         throw new Error("Video element is unavailable.");
@@ -877,7 +1001,7 @@ export function TurtleApp() {
         <div className="scene-orb scene-orb--right" aria-hidden="true" />
         <div className="scene-dots" aria-hidden="true" />
 
-        <div className={`turtle-shell${settings?.compactDensity ? " turtle-shell--compact" : ""}`}>
+        <div className={`turtle-shell${settings?.compactDensity ? " turtle-shell--compact" : ""}${isPlayerFullscreen && windowState.isDesktop ? " turtle-shell--native-fullscreen" : ""}`}>
           <header className="turtle-titlebar">
             <div className="turtle-titlebar__controls">
               {windowState.isDesktop && (
@@ -984,6 +1108,8 @@ export function TurtleApp() {
               className="workspace-search"
               onSubmit={(event) => {
                 event.preventDefault();
+                suppressSuggestionsRef.current = true;
+                setSuggestions([]);
                 void handleSearchSubmit();
               }}
             >
@@ -1002,6 +1128,8 @@ export function TurtleApp() {
                         className="suggestion-row"
                         key={item.id}
                         onClick={() => {
+                          suppressSuggestionsRef.current = true;
+                          setSuggestions([]);
                           setSearchQuery(item.searchTitle);
                           void handleSearchSubmit(item.searchTitle);
                         }}
@@ -1362,6 +1490,7 @@ export function TurtleApp() {
                       revealFullscreenControls();
                     }
                   }}
+                  onDoubleClick={() => void togglePlayerFullscreen()}
                   onMouseMove={() => revealFullscreenControls()}
                   ref={viewerSurfaceRef}
                 >
@@ -1372,9 +1501,6 @@ export function TurtleApp() {
                     ref={videoRef}
                     src={Hls.isSupported() ? undefined : currentStreamUrl || undefined}
                   />
-                  <div className="viewer-stage__hud">
-                    <span className="quality-badge">{qualityLabel}</span>
-                  </div>
                   {!selectedEpisode && (
                     <div className="viewer-stage__placeholder">
                       {showImage && <img alt={activeShow?.title || "Poster"} src={runtime.resolveImageUrl(showImage)} />}
@@ -1423,6 +1549,17 @@ export function TurtleApp() {
                         </div>
                       </div>
                       <div className="floating-player-controls__volume">
+                        {providers.length > 1 && (
+                          <select
+                            className="provider-select"
+                            onChange={(event) => void handleProviderChange(event.target.value)}
+                            value={selectedProvider}
+                          >
+                            {providers.map((provider) => (
+                              <option key={provider.kind} value={provider.kind}>{provider.label}</option>
+                            ))}
+                          </select>
+                        )}
                         <span className="quality-badge quality-badge--ghost">{qualityLabel}</span>
                         <Volume2 />
                         <input
@@ -1549,6 +1686,17 @@ export function TurtleApp() {
           </div>
 
           <div className="player-dock__volume">
+            {providers.length > 1 && (
+              <select
+                className="provider-select"
+                onChange={(event) => void handleProviderChange(event.target.value)}
+                value={selectedProvider}
+              >
+                {providers.map((provider) => (
+                  <option key={provider.kind} value={provider.kind}>{provider.label}</option>
+                ))}
+              </select>
+            )}
             <span className="quality-badge quality-badge--ghost">{qualityLabel}</span>
             <Volume2 />
             <input

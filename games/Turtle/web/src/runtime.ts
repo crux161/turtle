@@ -3,6 +3,7 @@ import {
   type EpisodeEntry,
   type FeaturedPayload,
   type HistoryEntry,
+  type ProviderOption,
   type SearchResult,
   type ShowSummary,
   type Suggestion,
@@ -348,6 +349,10 @@ class InvalidStandaloneAdapter implements TurtleRuntimeAdapter {
     throw new Error(DIRECT_OPEN_MESSAGE);
   }
 
+  async getProviders(): Promise<ProviderOption[]> {
+    return [];
+  }
+
   async getFeatured(): Promise<FeaturedPayload> {
     throw new Error(DIRECT_OPEN_MESSAGE);
   }
@@ -495,10 +500,16 @@ class StandaloneHttpAdapter implements TurtleRuntimeAdapter {
     return this.request<EpisodeEntry[]>(`/show-episodes?sourceId=${encodeURIComponent(sourceId)}`);
   }
 
-  async getStream(episodeLink: string): Promise<string> {
-    return normalizeStreamPayload(
-      await this.request<unknown>(`/stream?link=${encodeURIComponent(episodeLink)}`),
-    );
+  async getStream(episodeLink: string, preferredKind?: string): Promise<string> {
+    let query = `/stream?link=${encodeURIComponent(episodeLink)}`;
+    if (preferredKind) {
+      query += `&kind=${encodeURIComponent(preferredKind)}`;
+    }
+    return normalizeStreamPayload(await this.request<unknown>(query));
+  }
+
+  async getProviders(episodeLink: string): Promise<ProviderOption[]> {
+    return this.request<ProviderOption[]>(`/providers?link=${encodeURIComponent(episodeLink)}`);
   }
 
   async getFeatured(): Promise<FeaturedPayload> {
@@ -753,6 +764,10 @@ class GameletteBridgeAdapter implements TurtleRuntimeAdapter {
 
   async getStream(episodeLink: string): Promise<string> {
     return normalizeStreamPayload(await this.invokeLegacy("stream", episodeLink));
+  }
+
+  async getProviders(): Promise<ProviderOption[]> {
+    return [];
   }
 
   getFeatured(): Promise<FeaturedPayload> {

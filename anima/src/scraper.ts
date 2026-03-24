@@ -184,15 +184,59 @@ export async function getEpisodes(showId: string): Promise<Episode[]> {
   return [...episodes.values()].sort((left, right) => left.epNum - right.epNum);
 }
 
-export async function extractStreamUrl(episodeLink: string): Promise<string> {
-  return (await extractStreamSource(episodeLink)).url;
+export interface ProviderOption {
+  kind: ServerKind;
+  label: string;
 }
 
-export async function extractStreamSource(episodeLink: string): Promise<StreamSource> {
+export async function listProviders(episodeLink: string): Promise<ProviderOption[]> {
   const episodeUrl = resolveUrl(episodeLink, getBaseUrl());
   const { body, finalUrl } = await fetchText(episodeUrl);
   const $ = load(body);
   const servers = collectServerCandidates($, finalUrl);
+
+  const seen = new Set<ServerKind>();
+  const providers: ProviderOption[] = [];
+
+  for (const server of servers) {
+    if (!seen.has(server.kind)) {
+      seen.add(server.kind);
+      providers.push({ kind: server.kind, label: formatServerKindLabel(server.kind) });
+    }
+  }
+
+  return providers;
+}
+
+function formatServerKindLabel(kind: ServerKind): string {
+  switch (kind) {
+    case "SUB": return "Sub";
+    case "HSUB": return "Hard Sub";
+    case "DUB": return "Dub";
+    default: return "Default";
+  }
+}
+
+export async function extractStreamUrl(episodeLink: string): Promise<string> {
+  return (await extractStreamSource(episodeLink)).url;
+}
+
+export async function extractStreamSource(
+  episodeLink: string,
+  preferredKind?: string,
+): Promise<StreamSource> {
+  const episodeUrl = resolveUrl(episodeLink, getBaseUrl());
+  const { body, finalUrl } = await fetchText(episodeUrl);
+  const $ = load(body);
+  let servers = collectServerCandidates($, finalUrl);
+
+  if (preferredKind) {
+    const normalizedPref = preferredKind.toUpperCase();
+    const preferred = servers.filter((s) => s.kind === normalizedPref);
+    if (preferred.length > 0) {
+      servers = preferred;
+    }
+  }
 
   let lastError: unknown;
 
